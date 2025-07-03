@@ -1,4 +1,4 @@
-// UltraMsg WhatsApp Order Handler Bot (Node.js + Express)
+// UltraMsg WhatsApp Order Handler Bot (Node.js + Express, Railway-ready)
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -6,10 +6,11 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Replace with your UltraMsg credentials
-const ULTRA_INSTANCE_ID = 'instance129153';
-const ULTRA_TOKEN = 'l0drxq3vvfq34tdc';
-const DELIVERY_PHONE = '237680739079'; // e.g. '2376xxxxxxx'
+// Use Railway environment variables
+const ULTRA_INSTANCE_ID = process.env.ULTRA_INSTANCE_ID;
+const ULTRA_TOKEN = process.env.ULTRA_TOKEN;
+const DELIVERY_PHONE = process.env.DELIVERY_PHONE; // e.g. '2376xxxxxxx'
+const ADMIN_PHONE = process.env.ADMIN_PHONE; // Optional: notify admin too
 
 app.use(bodyParser.json());
 
@@ -28,19 +29,29 @@ app.post('/ultramsg-webhook', async (req, res) => {
       // Create delivery message
       const forwardMessage = `🚴 *New Delivery Order*\n📦 ${food}\n🏠 ${address}\n👤 ${customer}\n📞 ${phone}`;
 
-      // Forward to delivery person via UltraMsg
+      // Send to delivery person
       await axios.post(`https://api.ultramsg.com/${ULTRA_INSTANCE_ID}/messages/chat`, {
+        token: ULTRA_TOKEN,
         to: DELIVERY_PHONE,
         body: forwardMessage,
         priority: 10
       }, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ULTRA_TOKEN}`
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log('Forwarded message to delivery number.');
+      // Optionally, notify admin as well
+      if (ADMIN_PHONE) {
+        await axios.post(`https://api.ultramsg.com/${ULTRA_INSTANCE_ID}/messages/chat`, {
+          token: ULTRA_TOKEN,
+          to: ADMIN_PHONE,
+          body: `🛎️ New order received!\n${forwardMessage}`,
+          priority: 10
+        }, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log('Forwarded message to delivery and admin.');
     }
 
     res.sendStatus(200);
