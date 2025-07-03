@@ -1,16 +1,9 @@
-const cors = require('cors');
-app.use(cors({
-  origin: '*', // For development. For production, use your actual domain.
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
-
-
 // UltraMsg WhatsApp Order Handler Bot (Node.js + Express)
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -21,6 +14,11 @@ const DELIVERY_PHONE = process.env.DELIVERY_PHONE; // e.g. '2376xxxxxxx'
 const ADMIN_PHONE = process.env.ADMIN_PHONE; // e.g. '2376xxxxxxx'
 
 app.use(bodyParser.json());
+app.use(cors({
+  origin: '*', // For development. For production, specify your frontend domain.
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 
 // API endpoint for frontend order submission
 app.post('/api/place-order', async (req, res) => {
