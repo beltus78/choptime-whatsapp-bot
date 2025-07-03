@@ -100,6 +100,11 @@ app.post('/api/place-order', async (req, res) => {
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error processing order:', error.message);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+      console.error('Response headers:', error.response.headers);
+    }
     res.status(500).json({ error: 'Failed to send WhatsApp messages' });
   }
 });
