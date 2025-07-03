@@ -7,9 +7,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Replace with your UltraMsg credentials
-const ULTRA_INSTANCE_ID = 'your_instance_id';
-const ULTRA_TOKEN = 'your_ultramsg_token';
-const DELIVERY_PHONE = 'delivery_number'; // e.g. '2376xxxxxxx'
+const ULTRA_INSTANCE_ID = 'instance129153';
+const ULTRA_TOKEN = 'l0drxq3vvfq34tdc';
+const DELIVERY_PHONE = '237680739079'; // e.g. '2376xxxxxxx'
 
 app.use(bodyParser.json());
 
