@@ -20,10 +20,22 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
+// Helper to normalize Cameroon phone numbers to 2376xxxxxxxx
+function normalizeCameroonPhone(phone) {
+  let digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 9 && digits.startsWith('6')) {
+    digits = '237' + digits;
+  }
+  if (digits.length === 12 && digits.startsWith('237')) {
+    return digits;
+  }
+  return digits;
+}
+
 // API endpoint for frontend order submission
 app.post('/api/place-order', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, user_phone } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Missing order message' });
@@ -48,6 +60,21 @@ app.post('/api/place-order', async (req, res) => {
     }, {
       headers: { 'Content-Type': 'application/json' }
     });
+
+    // Send confirmation to user
+    if (user_phone) {
+      const normalizedUserPhone = normalizeCameroonPhone(user_phone);
+      const confirmationMessage =
+        '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
+      await axios.post(`https://api.ultramsg.com/${ULTRA_INSTANCE_ID}/messages/chat`, {
+        token: ULTRA_TOKEN,
+        to: normalizedUserPhone,
+        body: confirmationMessage,
+        priority: 10
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     res.status(200).json({ success: true });
   } catch (error) {
