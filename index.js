@@ -13,6 +13,13 @@ const ULTRA_TOKEN = process.env.ULTRA_TOKEN;
 const DELIVERY_PHONE = process.env.DELIVERY_PHONE; // e.g. '2376xxxxxxx'
 const ADMIN_PHONE = process.env.ADMIN_PHONE; // e.g. '2376xxxxxxx'
 
+// Map towns to delivery phone numbers
+const DELIVERY_PHONE_MAP = {
+  'Buea': process.env.DELIVERY_PHONE_BUEA || DELIVERY_PHONE,
+  'Limbe': process.env.DELIVERY_PHONE_LIMBE || DELIVERY_PHONE,
+  // Add more towns as needed
+};
+
 app.use(bodyParser.json());
 app.use(cors({
   origin: '*', // For development. For production, specify your frontend domain.
@@ -35,11 +42,15 @@ function normalizeCameroonPhone(phone) {
 // API endpoint for frontend order submission
 app.post('/api/place-order', async (req, res) => {
   try {
-    const { message, user_phone } = req.body;
+    const { message, user_phone, selectedTown, town } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Missing order message' });
     }
+
+    // Determine delivery phone based on town
+    const orderTown = selectedTown || town || '';
+    const deliveryPhone = DELIVERY_PHONE_MAP[orderTown] || DELIVERY_PHONE;
 
     // Send to admin
     await axios.post(`https://api.ultramsg.com/${ULTRA_INSTANCE_ID}/messages/chat`, {
@@ -51,10 +62,10 @@ app.post('/api/place-order', async (req, res) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Send to delivery
+    // Send to delivery (town-specific)
     await axios.post(`https://api.ultramsg.com/${ULTRA_INSTANCE_ID}/messages/chat`, {
       token: ULTRA_TOKEN,
-      to: DELIVERY_PHONE,
+      to: deliveryPhone,
       body: message,
       priority: 10
     }, {
