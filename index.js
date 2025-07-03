@@ -1,3 +1,11 @@
+const cors = require('cors');
+app.use(cors({
+  origin: '*', // For development. For production, use your actual domain.
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
+
+
 // UltraMsg WhatsApp Order Handler Bot (Node.js + Express)
 
 const express = require('express');
