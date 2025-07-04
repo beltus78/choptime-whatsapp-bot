@@ -73,21 +73,26 @@ async function sendWhatsAppMessage(to, body) {
     return;
   }
   console.log('Sending WhatsApp message to:', to, 'with body:', body);
-  await axios.post(
-    `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-    {
-      messaging_product: 'whatsapp',
-      to,
-      type: 'text',
-      text: { body }
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-        'Content-Type': 'application/json'
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
       }
-    }
-  );
+    );
+  } catch (error) {
+    console.error('WhatsApp API error:', error.response?.data || error.message);
+    throw error;
+  }
 }
 
 // Helper to fetch menu from Supabase
@@ -323,6 +328,11 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
   } catch (error) {
     console.error('Error processing WhatsApp webhook:', error.message);
+    if (error.response) {
+      console.error('WhatsApp webhook error response data:', error.response.data);
+      console.error('WhatsApp webhook error response status:', error.response.status);
+      console.error('WhatsApp webhook error response headers:', error.response.headers);
+    }
     res.sendStatus(500);
   }
 });
