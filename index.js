@@ -116,7 +116,7 @@ async function fetchMenu() {
 // API endpoint for frontend order submission
 app.post('/api/place-order', async (req, res) => {
   try {
-    const { message, user_phone, selectedTown, town } = req.body;
+    const { message, user_phone, selectedTown, town, orderRef } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Missing order message' });
@@ -137,8 +137,12 @@ app.post('/api/place-order', async (req, res) => {
     // Send confirmation to user
     console.log('Received user_phone from frontend:', user_phone);
     if (user_phone && typeof user_phone === 'string' && user_phone.trim().length > 0) {
-      const confirmationMessage =
-        '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
+      let confirmationMessage =
+        '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.';
+      if (orderRef) {
+        confirmationMessage += `\n\n📄 Order Number: ${orderRef}`;
+      }
+      confirmationMessage += '\n\nIf you have any questions, reply to this message.';
       await sendWhatsAppMessage(user_phone.trim(), confirmationMessage);
     } else {
       console.error('No user_phone provided in order payload, not sending WhatsApp confirmation.');
@@ -214,6 +218,7 @@ app.post('/webhook', async (req, res) => {
       if (!userSessions[from]) {
         userSessions[from] = { step: 'init', type: null, details: {} };
       }
+      setSessionTimeout(from); // reset session timeout on every message
       const session = userSessions[from];
       const lowerText = text.toLowerCase();
 
@@ -239,11 +244,13 @@ app.post('/webhook', async (req, res) => {
           session.type = 'vendor';
           session.step = 'await_vendor_name';
           await sendWhatsAppMessage(from, 'Great! Please enter your full name to become a vendor.');
+          setSessionTimeout(from);
           continue;
         } else if (lowerText === '3' || lowerText.includes('rider')) {
           session.type = 'rider';
           session.step = 'await_rider_name';
           await sendWhatsAppMessage(from, 'Awesome! Please enter your full name to become a rider.');
+          setSessionTimeout(from);
           continue;
         } else if (lowerText === '4' || lowerText.includes('support')) {
           await sendWhatsAppMessage(from, `Contact Support:\nEmail: ${SUPPORT_EMAIL}\nPhone: ${SUPPORT_PHONE}`);
@@ -251,6 +258,7 @@ app.post('/webhook', async (req, res) => {
           continue;
         } else {
           await sendWhatsAppMessage(from, 'Please reply with 1, 2, 3, or 4.');
+          setSessionTimeout(from);
           continue;
         }
       }
@@ -327,4 +335,13 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); 
+});
+
+// Add session timeout logic for userSessions
+function setSessionTimeout(phone) {
+  if (!userSessions[phone]) return;
+  if (userSessions[phone]._timeout) clearTimeout(userSessions[phone]._timeout);
+  userSessions[phone]._timeout = setTimeout(() => {
+    delete userSessions[phone];
+  }, 5 * 60 * 1000); // 5 minutes
+} 
