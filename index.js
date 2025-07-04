@@ -147,11 +147,19 @@ app.post('/api/place-order', async (req, res) => {
     }
 
     // Send confirmation to user
+    console.log('Received user_phone from frontend:', user_phone);
     if (user_phone) {
       const normalizedUserPhone = normalizeCameroonPhone(user_phone);
-      const confirmationMessage =
-        '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
-      await sendWhatsAppMessage(normalizedUserPhone, confirmationMessage);
+      console.log('Normalized user_phone:', normalizedUserPhone);
+      if (normalizedUserPhone && normalizedUserPhone.length === 12 && normalizedUserPhone.startsWith('237')) {
+        const confirmationMessage =
+          '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
+        await sendWhatsAppMessage(normalizedUserPhone, confirmationMessage);
+      } else {
+        console.error('Invalid or missing user phone after normalization, not sending WhatsApp confirmation.');
+      }
+    } else {
+      console.error('No user_phone provided in order payload, not sending WhatsApp confirmation.');
     }
 
     res.status(200).json({ success: true });
