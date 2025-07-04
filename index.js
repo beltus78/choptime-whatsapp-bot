@@ -75,7 +75,7 @@ async function sendWhatsAppMessage(to, body) {
   console.log('Sending WhatsApp message to:', to, 'with body:', body);
   try {
     await axios.post(
-      `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v23.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
       {
         messaging_product: 'whatsapp',
         to,
