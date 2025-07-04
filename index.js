@@ -54,18 +54,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-// Helper to normalize Cameroon phone numbers to 2376xxxxxxxx
-function normalizeCameroonPhone(phone) {
-  let digits = String(phone).replace(/\D/g, '');
-  if (digits.length === 9 && digits.startsWith('6')) {
-    digits = '237' + digits;
-  }
-  if (digits.length === 12 && digits.startsWith('237')) {
-    return digits;
-  }
-  return digits;
-}
-
 // Helper to send WhatsApp message via Cloud API
 async function sendWhatsAppMessage(to, body) {
   if (!to) {
@@ -148,16 +136,10 @@ app.post('/api/place-order', async (req, res) => {
 
     // Send confirmation to user
     console.log('Received user_phone from frontend:', user_phone);
-    if (user_phone) {
-      const normalizedUserPhone = normalizeCameroonPhone(user_phone);
-      console.log('Normalized user_phone:', normalizedUserPhone);
-      if (normalizedUserPhone && normalizedUserPhone.length === 12 && normalizedUserPhone.startsWith('237')) {
-        const confirmationMessage =
-          '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
-        await sendWhatsAppMessage(normalizedUserPhone, confirmationMessage);
-      } else {
-        console.error('Invalid or missing user phone after normalization, not sending WhatsApp confirmation.');
-      }
+    if (user_phone && typeof user_phone === 'string' && user_phone.trim().length > 0) {
+      const confirmationMessage =
+        '✅ Thank you for your order! We have received it and will contact you soon to confirm delivery.\n\nIf you have any questions, reply to this message.';
+      await sendWhatsAppMessage(user_phone.trim(), confirmationMessage);
     } else {
       console.error('No user_phone provided in order payload, not sending WhatsApp confirmation.');
     }
@@ -219,7 +201,7 @@ app.post('/webhook', async (req, res) => {
                 cancelled: 'Your order has been cancelled. If you have questions, contact support.',
               };
               await sendWhatsAppMessage(
-                normalizeCameroonPhone(order.user_phone),
+                order.user_phone,
                 statusMessages[newStatus] || `Order status updated: ${newStatus}`
               );
             }
@@ -311,11 +293,71 @@ app.post('/webhook', async (req, res) => {
           session.step = 'await_rider_location';
           await sendWhatsAppMessage(from, 'Where are you based?');
           continue;
+          const riderMsg = `🚴 *New Rider Application*\nName: ${session.details.name}\nLocation: ${session.details.location}\nPhone: ${session.details.phone}\nWhatsApp: ${from}`;
+          await sendWhatsAppMessage(VENDOR_RIDER_PHONE, riderMsg);
+          await sendWhatsAppMessage(from, 'Thank you! Your rider application has been received. We will contact you soon.');
+          delete userSessions[from];
+          continue;
         }
+      }
+
+      // Fallback: restart menu
+      await sendWhatsAppMessage(from, 'To get started, reply with any message.');
+      delete userSessions[from];
+    }
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error processing WhatsApp webhook:', error.message);
+    if (error.response) {
+      console.error('WhatsApp webhook error response data:', error.response.data);
+      console.error('WhatsApp webhook error response status:', error.response.status);
+      console.error('WhatsApp webhook error response headers:', error.response.headers);
+    }
+    res.sendStatus(500);
+  }
+});
+
+app.get('/', (req, res) => {
+  res.send('ChopTime Order Bot is running.');
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});         }
         if (session.step === 'await_rider_location') {
           session.details.location = text;
           session.step = 'await_rider_phone';
-          await sendWhatsAppMessage(from, 'What is your phone number?');
+          const riderMsg = `🚴 *New Rider Application*\nName: ${session.details.name}\nLocation: ${session.details.location}\nPhone: ${session.details.phone}\nWhatsApp: ${from}`;
+          await sendWhatsAppMessage(VENDOR_RIDER_PHONE, riderMsg);
+          await sendWhatsAppMessage(from, 'Thank you! Your rider application has been received. We will contact you soon.');
+          delete userSessions[from];
+          continue;
+        }
+      }
+
+      // Fallback: restart menu
+      await sendWhatsAppMessage(from, 'To get started, reply with any message.');
+      delete userSessions[from];
+    }
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error processing WhatsApp webhook:', error.message);
+    if (error.response) {
+      console.error('WhatsApp webhook error response data:', error.response.data);
+      console.error('WhatsApp webhook error response status:', error.response.status);
+      console.error('WhatsApp webhook error response headers:', error.response.headers);
+    }
+    res.sendStatus(500);
+  }
+});
+
+app.get('/', (req, res) => {
+  res.send('ChopTime Order Bot is running.');
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});           await sendWhatsAppMessage(from, 'What is your phone number?');
           continue;
         }
         if (session.step === 'await_rider_phone') {
@@ -352,3 +394,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 }); 
+
+
+
