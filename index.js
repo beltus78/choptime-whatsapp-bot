@@ -293,37 +293,7 @@ app.post('/webhook', async (req, res) => {
           session.step = 'await_rider_location';
           await sendWhatsAppMessage(from, 'Where are you based?');
           continue;
-          const riderMsg = `🚴 *New Rider Application*\nName: ${session.details.name}\nLocation: ${session.details.location}\nPhone: ${session.details.phone}\nWhatsApp: ${from}`;
-          await sendWhatsAppMessage(VENDOR_RIDER_PHONE, riderMsg);
-          await sendWhatsAppMessage(from, 'Thank you! Your rider application has been received. We will contact you soon.');
-          delete userSessions[from];
-          continue;
         }
-      }
-
-      // Fallback: restart menu
-      await sendWhatsAppMessage(from, 'To get started, reply with any message.');
-      delete userSessions[from];
-    }
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Error processing WhatsApp webhook:', error.message);
-    if (error.response) {
-      console.error('WhatsApp webhook error response data:', error.response.data);
-      console.error('WhatsApp webhook error response status:', error.response.status);
-      console.error('WhatsApp webhook error response headers:', error.response.headers);
-    }
-    res.sendStatus(500);
-  }
-});
-
-app.get('/', (req, res) => {
-  res.send('ChopTime Order Bot is running.');
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});         }
         if (session.step === 'await_rider_location') {
           session.details.location = text;
           session.step = 'await_rider_phone';
@@ -357,41 +327,4 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-});           await sendWhatsAppMessage(from, 'What is your phone number?');
-          continue;
-        }
-        if (session.step === 'await_rider_phone') {
-          session.details.phone = text;
-          // Send details to admin number
-          const riderMsg = `🚴 *New Rider Application*\nName: ${session.details.name}\nLocation: ${session.details.location}\nPhone: ${session.details.phone}\nWhatsApp: ${from}`;
-          await sendWhatsAppMessage(VENDOR_RIDER_PHONE, riderMsg);
-          await sendWhatsAppMessage(from, 'Thank you! Your rider application has been received. We will contact you soon.');
-          delete userSessions[from];
-          continue;
-        }
-      }
-
-      // Fallback: restart menu
-      await sendWhatsAppMessage(from, 'To get started, reply with any message.');
-      delete userSessions[from];
-    }
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Error processing WhatsApp webhook:', error.message);
-    if (error.response) {
-      console.error('WhatsApp webhook error response data:', error.response.data);
-      console.error('WhatsApp webhook error response status:', error.response.status);
-      console.error('WhatsApp webhook error response headers:', error.response.headers);
-    }
-    res.sendStatus(500);
-  }
-});
-
-app.get('/', (req, res) => {
-  res.send('ChopTime Order Bot is running.');
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
 }); 
-
