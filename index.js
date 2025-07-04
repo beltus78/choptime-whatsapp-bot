@@ -51,6 +51,11 @@ function normalizeCameroonPhone(phone) {
 
 // Helper to send WhatsApp message via Cloud API
 async function sendWhatsAppMessage(to, body) {
+  if (!to) {
+    console.error('No recipient phone number provided for WhatsApp message.');
+    return;
+  }
+  console.log('Sending WhatsApp message to:', to, 'with body:', body);
   await axios.post(
     `https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
     {
